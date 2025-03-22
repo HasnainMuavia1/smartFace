@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-graduate fa-3x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">Welcome, {{ student.user.get_full_name|default:student.user.username }}</h4>
+                            <p class="mb-0">Roll Number: {{ student.roll_number }}</p>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'student_timetable' %}" class="btn btn-light">
+                                <i class="fas fa-calendar-alt"></i> View Timetable
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrolled Courses -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Your Enrolled Courses</h5>
+                    <a href="{% url 'student_view_attendance' %}" class="btn btn-light btn-sm">View All Attendance</a>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for course in courses %}
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="card dashboard-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <h5 class="card-title mb-0">{{ course.name }}</h5>
+                                        <span class="badge bg-primary">{{ course.code }}</span>
+                                    </div>
+                                    <p class="card-text">{{ course.description|truncatechars:100 }}</p>
+                                    <div class="progress mb-3" style="height: 10px;">
+                                        {% with attendance=course.attendance_set.all %}
+                                        {% with present_count=attendance|filter:'is_present=True'|length %}
+                                        {% with total_count=attendance|length %}
+                                        {% if total_count > 0 %}
+                                        {% with percentage=present_count|multiply:100|divide:total_count %}
+                                        <div class="progress-bar {% if percentage >= 75 %}bg-success{% elif percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%"
+                                             aria-valuenow="{{ percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ percentage }}%
+                                        </div>
+                                        {% endwith %}
+                                        {% endif %}
+                                        {% endwith %}
+                                        {% endwith %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'student_course_attendance' course.id %}" class="btn btn-primary">
+                                            <i class="fas fa-clock"></i> Attendance
+                                        </a>
+                                        <a href="{% url 'student_course_report' course.id %}" class="btn btn-info">
+                                            <i class="fas fa-chart-line"></i> Report
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle"></i> You are not enrolled in any courses yet.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-6 col-md-3">
+                            <div class="card stat-card primary text-center h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-book fa-2x mb-2 text-primary"></i>
+                                    <h5 class="card-title">Total Courses</h5>
+                                    <h3 class="mb-0">{{ courses.count }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card stat-card success text-center h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                                    <h5 class="card-title">Present Today</h5>
+                                    <h3 class="mb-0">{{ present_today|default:0 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card stat-card warning text-center h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-calendar-check fa-2x mb-2 text-warning"></i>
+                                    <h5 class="card-title">Classes Today</h5>
+                                    <h3 class="mb-0">{{ classes_today|default:0 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card stat-card info text-center h-100">
+                                <div class="card-body">
+                                    <i class="fas fa-graduation-cap fa-2x mb-2 text-info"></i>
+                                    <h5 class="card-title">Overall Attendance</h5>
+                                    <h3 class="mb-0">{{ overall_attendance|default:'0%' }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}

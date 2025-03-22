@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Courses{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="text-white">
+                        <h4 class="mb-1">Course Assignment</h4>
+                        <p class="mb-0">Assign courses to faculty and students</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Form -->
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">New Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'assign_course' %}" class="row g-4">
+                        {% csrf_token %}
+                        <div class="col-md-6">
+                            <label class="form-label">Select Course</label>
+                            <select class="form-select" name="course" required>
+                                <option value="">Choose a course...</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" data-code="{{ course.code }}">
+                                    {{ course.name }} ({{ course.code }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assignment Type</label>
+                            <select class="form-select" name="assignment_type" id="assignmentType" required>
+                                <option value="">Choose type...</option>
+                                <option value="faculty">Assign to Faculty</option>
+                                <option value="student">Assign to Student</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12" id="facultySection" style="display: none;">
+                            <label class="form-label">Select Faculty</label>
+                            <select class="form-select" name="faculty" id="facultySelect">
+                                <option value="">Choose faculty...</option>
+                                {% for faculty in faculty_list %}
+                                <option value="{{ faculty.id }}">
+                                    {{ faculty.user.get_full_name }} ({{ faculty.department|default:"No Department" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12" id="studentSection" style="display: none;">
+                            <label class="form-label">Select Students</label>
+                            <select class="form-select" name="students" id="studentSelect" multiple>
+                                {% for student in students %}
+                                <option value="{{ student.id }}">
+                                    {{ student.user.get_full_name }} ({{ student.roll_number }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">You can select multiple students</small>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Assign Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Course Details</h5>
+                </div>
+                <div class="card-body">
+                    <div id="courseDetails">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-book fa-3x mb-3"></i>
+                            <p class="mb-0">Select a course to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Assignments -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Current Assignments</h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary btn-sm active" data-bs-toggle="tab" data-bs-target="#facultyAssignments">
+                            Faculty Assignments
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tab" data-bs-target="#studentAssignments">
+                            Student Assignments
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="facultyAssignments">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Faculty</th>
+                                            <th>Course</th>
+                                            <th>Department</th>
+                                            <th>Students</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for assignment in faculty_assignments %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle bg-primary text-white me-2">
+                                                        {{ assignment.faculty.user.first_name|first|upper }}
+                                                    </div>
+                                                    {{ assignment.faculty.user.get_full_name }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ assignment.course.code }}</span>
+                                                {{ assignment.course.name }}
+                                            </td>
+                                            <td>{{ assignment.faculty.department|default:"N/A" }}</td>
+                                            <td>{{ assignment.course.students.count }}</td>
+                                            <td>
+                                                <form method="post" action="{% url 'remove_assignment' assignment.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                                    <p class="mb-0">No faculty assignments found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="studentAssignments">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Roll Number</th>
+                                            <th>Courses</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle bg-primary text-white me-2">
+                                                        {{ student.user.first_name|first|upper }}
+                                                    </div>
+                                                    {{ student.user.get_full_name }}
+                                                </div>
+                                            </td>
+                                            <td>{{ student.roll_number }}</td>
+                                            <td>
+                                                {% for course in student.courses.all %}
+                                                <span class="badge bg-primary me-1">{{ course.code }}</span>
+                                                {% empty %}
+                                                <span class="text-muted">No courses</span>
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editStudentCoursesModal{{ student.id }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Edit Student Courses Modal -->
+                                        <div class="modal fade" id="editStudentCoursesModal{{ student.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title">Edit Student Courses</h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'update_student_courses' student.id %}">
+                                                        {% csrf_token %}
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Courses for {{ student.user.get_full_name }}</label>
+                                                                <select class="form-select" name="courses" multiple>
+                                                                    {% for course in courses %}
+                                                                    <option value="{{ course.id }}" {% if course in student.courses.all %}selected{% endif %}>
+                                                                        {{ course.name }} ({{ course.code }})
+                                                                    </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                                    <p class="mb-0">No student assignments found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.form-select[multiple] {
+    height: 200px;
+}
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const assignmentType = document.getElementById('assignmentType');
+    const facultySection = document.getElementById('facultySection');
+    const studentSection = document.getElementById('studentSection');
+    const courseDetails = document.getElementById('courseDetails');
+
+    // Handle assignment type change
+    assignmentType.addEventListener('change', function() {
+        facultySection.style.display = 'none';
+        studentSection.style.display = 'none';
+
+        if (this.value === 'faculty') {
+            facultySection.style.display = 'block';
+        } else if (this.value === 'student') {
+            studentSection.style.display = 'block';
+        }
+    });
+
+    // Initialize multiple select
+    const multiSelects = document.querySelectorAll('select[multiple]');
+    multiSelects.forEach(select => {
+        new Choices(select, {
+            removeItemButton: true,
+            maxItemCount: 20,
+            searchEnabled: true,
+            placeholder: true,
+            placeholderValue: 'Select items'
+        });
+    });
+
+    // Handle course selection
+    const courseSelect = document.querySelector('select[name="course"]');
+    courseSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const courseCode = selectedOption.dataset.code;
+            fetch(`/api/course/${selectedOption.value}/`)
+                .then(response => response.json())
+                .then(course => {
+                    courseDetails.innerHTML = `
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-circle bg-primary text-white">
+                                    ${courseCode.substring(0, 2)}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">${course.name}</h6>
+                                <small class="text-muted">${courseCode}</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Description</small>
+                            <p class="mb-0">${course.description}</p>
+                        </div>
+                        <hr>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Students</small>
+                                <strong>${course.student_count}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Faculty</small>
+                                <strong>${course.faculty_count}</strong>
+                            </div>
+                        </div>
+                    `;
+                });
+        } else {
+            courseDetails.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-book fa-3x mb-3"></i>
+                    <p class="mb-0">Select a course to view details</p>
+                </div>
+            `;
+        }
+    });
+});
+</script>
+{% endblock %}

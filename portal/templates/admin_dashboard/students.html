@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Students{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="text-white">
+                        <h4 class="mb-1">Student Management</h4>
+                        <p class="mb-0">Add, edit, and manage student information</p>
+                    </div>
+                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="fas fa-plus"></i> Add New Student
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" placeholder="Search students...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option value="">All Courses</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option value="">Sort By</option>
+                                <option value="name">Name</option>
+                                <option value="roll_number">Roll Number</option>
+                                <option value="date_joined">Date Joined</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Student</th>
+                                <th scope="col">Roll Number</th>
+                                <th scope="col">Courses</th>
+                                <th scope="col">Contact</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="avatar-circle bg-primary text-white">
+                                                {{ student.user.first_name|first|upper }}{{ student.user.last_name|first|upper }}
+                                            </div>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-0">{{ student.user.get_full_name }}</h6>
+                                            <small class="text-muted">{{ student.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ student.roll_number }}</td>
+                                <td>
+                                    {% for course in student.courses.all %}
+                                    <span class="badge bg-primary">{{ course.code }}</span>
+                                    {% empty %}
+                                    <span class="text-muted">No courses</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <small><i class="fas fa-phone fa-fw"></i> {{ student.phone|default:"N/A" }}</small>
+                                        <small><i class="fas fa-envelope fa-fw"></i> {{ student.user.email }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if student.user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="{% url 'student_details' student.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteStudentModal{{ student.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Edit Student Modal -->
+                            <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title">Edit Student</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'edit_student' student.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">First Name</label>
+                                                        <input type="text" class="form-control" name="first_name" value="{{ student.user.first_name }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Last Name</label>
+                                                        <input type="text" class="form-control" name="last_name" value="{{ student.user.last_name }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Email</label>
+                                                        <input type="email" class="form-control" name="email" value="{{ student.user.email }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Roll Number</label>
+                                                        <input type="text" class="form-control" name="roll_number" value="{{ student.roll_number }}" required>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Phone</label>
+                                                        <input type="tel" class="form-control" name="phone" value="{{ student.phone }}">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Courses</label>
+                                                        <select class="form-select" name="courses" multiple>
+                                                            {% for course in courses %}
+                                                            <option value="{{ course.id }}" {% if course in student.courses.all %}selected{% endif %}>
+                                                                {{ course.name }}
+                                                            </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" name="is_active" {% if student.user.is_active %}checked{% endif %}>
+                                                            <label class="form-check-label">Active</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delete Student Modal -->
+                            <div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Delete Student</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete <strong>{{ student.user.get_full_name }}</strong>?</p>
+                                            <p class="text-danger mb-0"><small>This action cannot be undone.</small></p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'delete_student' student.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete Student</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-user-graduate fa-3x mb-3"></i>
+                                        <p class="mb-0">No students found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add New Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'add_student' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Roll Number</label>
+                            <input type="text" class="form-control" name="roll_number" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" name="phone">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Courses</label>
+                            <select class="form-select" name="courses" multiple>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" checked>
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize multiple select
+    const selects = document.querySelectorAll('select[multiple]');
+    selects.forEach(select => {
+        new Choices(select, {
+            removeItemButton: true,
+            maxItemCount: 5,
+            searchEnabled: true,
+            placeholder: true,
+            placeholderValue: 'Select courses'
+        });
+    });
+});
+</script>
+{% endblock %}
