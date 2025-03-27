@@ -21,17 +21,46 @@
         </div>
     </div>
 
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text bg-primary text-white">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="facultySearch" placeholder="Search by name, department, or email...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="departmentFilter">
+                <option value="">All Departments</option>
+                {% for faculty in faculty_list %}
+                    {% if faculty.department %}
+                        <option value="{{ faculty.department }}">{{ faculty.department }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
     <!-- Faculty Grid -->
-    <div class="row g-4">
+    <div class="row g-4" id="facultyGrid">
         {% for faculty in faculty_list %}
-        <div class="col-12 col-md-6 col-xl-4">
+        <div class="col-12 col-md-6 col-xl-4 faculty-card" 
+             data-name="{{ faculty.user.get_full_name|lower }}" 
+             data-department="{{ faculty.department|lower|default:'' }}"
+             data-email="{{ faculty.user.email|lower }}">
             <div class="card dashboard-card h-100">
                 <div class="card-body">
                     <div class="d-flex mb-3">
                         <div class="flex-shrink-0">
+                            {% if faculty.profile_picture %}
+                            <img src="{{ faculty.profile_picture.url }}" alt="{{ faculty.user.get_full_name }}" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;">
+                            {% else %}
                             <div class="avatar-circle bg-primary text-white">
                                 {{ faculty.user.first_name|first|upper }}{{ faculty.user.last_name|first|upper }}
                             </div>
+                            {% endif %}
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="card-title mb-1">{{ faculty.user.get_full_name }}</h5>
@@ -67,7 +96,7 @@
                                 <i class="fas fa-book fa-fw text-primary me-2"></i>
                                 <div>
                                     <small class="text-muted d-block">Courses</small>
-                                    <strong>{{ faculty.courseassignment_set.count }}</strong>
+                                    <strong>{{ faculty.course_assignments.count }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -98,7 +127,7 @@
                     <div class="mb-3">
                         <h6 class="card-subtitle mb-2">Assigned Courses</h6>
                         <div class="d-flex flex-wrap gap-2">
-                            {% for assignment in faculty.courseassignment_set.all %}
+                            {% for assignment in faculty.course_assignments.all %}
                             <span class="badge bg-primary">{{ assignment.course.code }}</span>
                             {% empty %}
                             <span class="text-muted">No courses assigned</span>
@@ -109,8 +138,8 @@
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignCourseModal{{ faculty.id }}">
                             <i class="fas fa-plus"></i> Assign Course
                         </button>
-                        <a href="{% url 'faculty_schedule' faculty.id %}" class="btn btn-info">
-                            <i class="fas fa-calendar"></i> Schedule
+                        <a href="{% url 'faculty_details' faculty.id %}" class="btn btn-info">
+                            <i class="fas fa-eye"></i> Details
                         </a>
                     </div>
                 </div>
@@ -131,7 +160,7 @@
                         <h5 class="modal-title">Edit Faculty</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <form method="post" action="{% url 'edit_faculty' faculty.id %}">
+                    <form method="post" action="{% url 'edit_faculty' faculty.id %}" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="modal-body">
                             <div class="row g-3">
@@ -144,16 +173,39 @@
                                     <input type="text" class="form-control" name="last_name" value="{{ faculty.user.last_name }}" required>
                                 </div>
                                 <div class="col-md-6">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" name="username" value="{{ faculty.user.username }}" required>
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label">Email</label>
                                     <input type="email" class="form-control" name="email" value="{{ faculty.user.email }}" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone</label>
-                                    <input type="tel" class="form-control" name="phone" value="{{ faculty.phone }}">
+                                    <input type="tel" class="form-control" name="phone" value="{{ faculty.phone|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Department</label>
+                                    <input type="text" class="form-control" name="department" value="{{ faculty.department|default:'' }}">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Department</label>
-                                    <input type="text" class="form-control" name="department" value="{{ faculty.department }}">
+                                    <label class="form-label">Profile Picture</label>
+                                    <input type="file" class="form-control edit-profile-picture" name="profile_picture" accept="image/*" data-faculty-id="{{ faculty.id }}">
+                                    <div class="mt-2 text-center edit-preview-container-{{ faculty.id }}">
+                                        {% if faculty.profile_picture %}
+                                            <img src="{{ faculty.profile_picture.url }}" alt="Profile Preview" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" name="remove_profile_picture" id="removeProfilePicture{{ faculty.id }}">
+                                                <label class="form-check-label" for="removeProfilePicture{{ faculty.id }}">
+                                                    Remove profile picture
+                                                </label>
+                                            </div>
+                                        {% else %}
+                                            <div class="edit-preview-inner-{{ faculty.id }}" style="display: none;">
+                                                <img src="" alt="Profile Preview" class="img-thumbnail" style="max-height: 150px;">
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 <div class="col-12">
                                     <div class="form-check">
@@ -182,7 +234,7 @@
                     </div>
                     <div class="modal-body">
                         <p>Are you sure you want to delete <strong>{{ faculty.user.get_full_name }}</strong>?</p>
-                        <p class="text-danger mb-0"><small>This action cannot be undone.</small></p>
+                        <p class="text-danger mb-0"><small>This action cannot be undone and will remove all course assignments.</small></p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -243,7 +295,7 @@
                 <h5 class="modal-title">Add New Faculty</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'add_faculty' %}">
+            <form method="post" action="{% url 'add_faculty' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="row g-3">
@@ -256,6 +308,10 @@
                             <input type="text" class="form-control" name="last_name" required>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" name="username" required>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Email</label>
                             <input type="email" class="form-control" name="email" required>
                         </div>
@@ -263,9 +319,29 @@
                             <label class="form-label">Phone</label>
                             <input type="tel" class="form-control" name="phone">
                         </div>
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="form-label">Department</label>
                             <input type="text" class="form-control" name="department">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Profile Picture</label>
+                            <input type="file" class="form-control" name="profile_picture" accept="image/*" id="addProfilePicture">
+                            <div class="mt-2 text-center profile-preview-container" style="display: none;">
+                                <img src="" alt="Profile Preview" class="profile-preview img-thumbnail" style="max-height: 150px;">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Assign Courses</label>
+                            <div class="border p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                                {% for course in courses %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="courses" value="{{ course.id }}" id="course{{ course.id }}">
+                                    <label class="form-check-label" for="course{{ course.id }}">
+                                        {{ course.name }} ({{ course.code }})
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
@@ -299,12 +375,104 @@
 }
 .dashboard-card {
     transition: transform 0.3s ease;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 .dashboard-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 .badge {
     font-weight: 500;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('facultySearch');
+    const facultyCards = document.querySelectorAll('.faculty-card');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        facultyCards.forEach(card => {
+            const name = card.dataset.name;
+            const department = card.dataset.department;
+            const email = card.dataset.email;
+            
+            if (name.includes(searchTerm) || 
+                department.includes(searchTerm) || 
+                email.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+    
+    // Department filter
+    const departmentFilter = document.getElementById('departmentFilter');
+    
+    departmentFilter.addEventListener('change', function() {
+        const selectedDepartment = this.value.toLowerCase();
+        
+        facultyCards.forEach(card => {
+            if (!selectedDepartment || card.dataset.department === selectedDepartment) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+    
+    // Remove duplicate department options
+    const departments = {};
+    Array.from(departmentFilter.options).forEach(option => {
+        if (option.value && departments[option.value]) {
+            option.remove();
+        } else {
+            departments[option.value] = true;
+        }
+    });
+
+    // Profile picture preview
+    const addProfilePictureInput = document.getElementById('addProfilePicture');
+    const profilePreviewContainer = document.querySelector('.profile-preview-container');
+    const profilePreviewImage = document.querySelector('.profile-preview');
+
+    addProfilePictureInput.addEventListener('change', function() {
+        const file = this.files[0];
+        const reader = new FileReader();
+
+        reader.addEventListener('load', function() {
+            profilePreviewImage.src = reader.result;
+            profilePreviewContainer.style.display = 'block';
+        });
+
+        reader.readAsDataURL(file);
+    });
+
+    // Edit profile picture preview
+    const editProfilePictureInputs = document.querySelectorAll('.edit-profile-picture');
+    editProfilePictureInputs.forEach(input => {
+        const facultyId = input.dataset.facultyId;
+        const editPreviewContainer = document.querySelector(`.edit-preview-container-${facultyId}`);
+        const editPreviewImage = document.querySelector(`.edit-preview-inner-${facultyId} img`);
+
+        input.addEventListener('change', function() {
+            const file = this.files[0];
+            const reader = new FileReader();
+
+            reader.addEventListener('load', function() {
+                editPreviewImage.src = reader.result;
+                editPreviewContainer.style.display = 'block';
+            });
+
+            reader.readAsDataURL(file);
+        });
+    });
+});
+</script>
 {% endblock %}

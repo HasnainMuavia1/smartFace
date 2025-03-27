@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Manual Attendance - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clipboard-check fa-3x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">Manual Attendance</h4>
+                            <p class="mb-0">{{ course.name }} ({{ course.code }})</p>
+                        </div>
+                        <div class="ms-auto">
+                            <a href="{% url 'faculty_dashboard' %}" class="btn btn-outline-light">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Mark Attendance</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="attendanceForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="date" name="date" value="{{ today|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-success" id="markAllPresent">Mark All Present</button>
+                                    <button type="button" class="btn btn-danger" id="markAllAbsent">Mark All Absent</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if student.profile_picture %}
+                                                <img src="{{ student.profile_picture_url }}" class="rounded-circle me-2" width="40" height="40" alt="Profile Picture">
+                                                {% else %}
+                                                <i class="fas fa-user-circle fa-2x me-2 text-secondary"></i>
+                                                {% endif %}
+                                                {{ student.user.get_full_name }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span id="status_{{ student.id }}" class="badge bg-secondary">Not Marked</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <input type="radio" class="btn-check attendance-radio" name="student_{{ student.id }}" id="present_{{ student.id }}" value="present" autocomplete="off">
+                                                <label class="btn btn-outline-success btn-sm" for="present_{{ student.id }}">Present</label>
+                                                
+                                                <input type="radio" class="btn-check attendance-radio" name="student_{{ student.id }}" id="absent_{{ student.id }}" value="absent" autocomplete="off">
+                                                <label class="btn btn-outline-danger btn-sm" for="absent_{{ student.id }}">Absent</label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Attendance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mark all present button
+        document.getElementById('markAllPresent').addEventListener('click', function() {
+            document.querySelectorAll('input[id^="present_"]').forEach(function(radio) {
+                radio.checked = true;
+                updateStatus(radio);
+            });
+        });
+        
+        // Mark all absent button
+        document.getElementById('markAllAbsent').addEventListener('click', function() {
+            document.querySelectorAll('input[id^="absent_"]').forEach(function(radio) {
+                radio.checked = true;
+                updateStatus(radio);
+            });
+        });
+        
+        // Update status badges when radio buttons are clicked
+        document.querySelectorAll('.attendance-radio').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                updateStatus(this);
+            });
+        });
+        
+        function updateStatus(radio) {
+            const studentId = radio.id.split('_')[1];
+            const statusBadge = document.getElementById('status_' + studentId);
+            
+            if (radio.value === 'present' && radio.checked) {
+                statusBadge.textContent = 'Present';
+                statusBadge.className = 'badge bg-success';
+            } else if (radio.value === 'absent' && radio.checked) {
+                statusBadge.textContent = 'Absent';
+                statusBadge.className = 'badge bg-danger';
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

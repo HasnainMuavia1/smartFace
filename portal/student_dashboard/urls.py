@@ -8,4 +8,6 @@ urlpatterns = [
     path('timetable/', views.view_timetable, name='student_timetable'),
     path('report/', views.generate_report, name='student_generate_report'),
     path('report/<int:course_id>/', views.generate_report, name='student_course_report'),
+    path('faculty/', views.view_faculty, name='student_view_faculty'),
+    path('faculty/<int:faculty_id>/', views.view_faculty, name='student_faculty_details'),
 ]

@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block title %}View Attendance - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clipboard-list fa-3x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">Attendance Records</h4>
+                            <p class="mb-0">{{ course.name }} ({{ course.code }})</p>
+                        </div>
+                        <div class="ms-auto">
+                            <a href="{% url 'faculty_dashboard' %}" class="btn btn-outline-light">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Filter Options</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="dateFrom" class="form-label">From Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ date_from|date:'Y-m-d' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dateTo" class="form-label">To Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ date_to|date:'Y-m-d' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="studentFilter" class="form-label">Student</label>
+                            <select class="form-select" id="studentFilter" name="student_id">
+                                <option value="">All Students</option>
+                                {% for student in students %}
+                                <option value="{{ student.id }}" {% if student_id == student.id %}selected{% endif %}>
+                                    {{ student.user.get_full_name|default:student.user.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="statusFilter" class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter" name="status">
+                                <option value="">All</option>
+                                <option value="present" {% if status == 'present' %}selected{% endif %}>Present</option>
+                                <option value="absent" {% if status == 'absent' %}selected{% endif %}>Absent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sortBy" class="form-label">Sort By</label>
+                            <select class="form-select" id="sortBy" name="sort_by">
+                                <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                                <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                                <option value="student_name" {% if sort_by == 'student_name' %}selected{% endif %}>Student Name</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex">
+                            <button type="submit" class="btn btn-primary me-2 flex-grow-1">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'faculty_view_attendance' course.id %}" class="btn btn-outline-secondary flex-grow-1">
+                                <i class="fas fa-redo"></i> Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-white me-3">
+                            <i class="fas fa-calendar-check text-primary icon-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Total Classes</h6>
+                            <h2 class="mb-0">{{ total_classes|default:"0" }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-white me-3">
+                            <i class="fas fa-user-check text-success icon-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Present Count</h6>
+                            <h2 class="mb-0">{{ present_count|default:"0" }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-white me-3">
+                            <i class="fas fa-user-times text-danger icon-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Absent Count</h6>
+                            <h2 class="mb-0">{{ absent_count|default:"0" }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Records Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Attendance Records</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-light" id="exportCSV">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" id="printRecords">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Student</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Marked By</th>
+                                    <th scope="col">Marked At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in attendance %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ record.date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if record.student.profile_picture %}
+                                                <img src="{{ record.student.profile_picture_url }}" class="rounded-circle me-2" width="32" height="32" alt="Profile Picture">
+                                            {% else %}
+                                                <i class="fas fa-user-circle fa-2x me-2 text-secondary"></i>
+                                            {% endif %}
+                                            {{ record.student.user.get_full_name|default:record.student.user.username }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if record.is_present %}
+                                            <span class="badge bg-success">Present</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.marked_by.get_full_name|default:record.marked_by.username }}</td>
+                                    <td>{{ record.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="empty-state">
+                                            <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                                            <h5>No Attendance Records Found</h5>
+                                            <p class="text-muted">Try adjusting your filters or add new attendance records.</p>
+                                            <a href="{% url 'mark_attendance' course.id %}" class="btn btn-primary mt-2">
+                                                <i class="fas fa-plus-circle"></i> Mark Attendance
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if attendance.has_other_pages %}
+                    <nav aria-label="Attendance pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if attendance.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ attendance.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in attendance.paginator.page_range %}
+                                {% if attendance.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                {% elif i > attendance.number|add:'-3' and i < attendance.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">{{ i }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if attendance.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ attendance.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ attendance.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .icon-lg {
+        font-size: 1.5rem;
+    }
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    .table th {
+        font-weight: 600;
+    }
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.5em 0.75em;
+    }
+    .table-responsive {
+        min-height: 300px;
+    }
+    @media (max-width: 767.98px) {
+        .card-header {
+            flex-direction: column;
+            align-items: start !important;
+        }
+        .card-header div {
+            margin-top: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Export to CSV
+        document.getElementById('exportCSV').addEventListener('click', function() {
+            // In a real implementation, this would trigger a download
+            alert('Export to CSV functionality would be implemented here.');
+        });
+        
+        // Print records
+        document.getElementById('printRecords').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script>
+{% endblock %}

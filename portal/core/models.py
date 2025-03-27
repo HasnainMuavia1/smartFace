@@ -44,21 +44,36 @@ class Faculty(models.Model):
     Faculty model extending the User model
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='faculty_profile')
+    profile_picture = models.ImageField(upload_to='faculty/', null=True, blank=True)
     department = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
     
     def __str__(self):
         return self.user.get_full_name() or self.user.username
+    
+    @property
+    def profile_picture_url(self):
+        if self.profile_picture:
+            return self.profile_picture.url
+        return '/static/images/default_profile.png'
 
 class Student(models.Model):
     """
     Student model extending the User model
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
-    roll_number = models.CharField(max_length=20, unique=True)
+    profile_picture = models.ImageField(upload_to='students/', null=True, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     courses = models.ManyToManyField(Course, related_name='students', blank=True)
     
     def __str__(self):
-        return f"{self.roll_number} - {self.user.get_full_name() or self.user.username}"
+        return f"{self.user.username} - {self.user.get_full_name()}"
+
+    @property
+    def profile_picture_url(self):
+        if self.profile_picture:
+            return self.profile_picture.url
+        return '/static/images/default_profile.png'
 
 class CourseAssignment(models.Model):
     """

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Members{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-chalkboard-teacher"></i> Your Faculty Members</h2>
+        <a href="{% url 'student_dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Faculty List -->
+    <div class="row g-4">
+        {% for faculty in faculty_list %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            {% if faculty.profile_picture %}
+                            <img src="{{ faculty.profile_picture.url }}" alt="{{ faculty.user.get_full_name }}" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;">
+                            {% else %}
+                            <div class="avatar-circle bg-primary text-white" style="width: 64px; height: 64px; font-size: 1.5rem;">
+                                {{ faculty.user.first_name|first|upper }}{{ faculty.user.last_name|first|upper }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-1">{{ faculty.user.get_full_name }}</h5>
+                            <p class="text-muted mb-0">{{ faculty.department|default:"No Department" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'student_faculty_details' faculty.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-info-circle"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No faculty members are teaching your courses.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

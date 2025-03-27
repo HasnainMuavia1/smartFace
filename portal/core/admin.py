@@ -37,8 +37,8 @@ class FacultyAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'roll_number')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'roll_number')
+    list_display = ('user',)
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
     raw_id_fields = ('user',)
     filter_horizontal = ('courses',)
 

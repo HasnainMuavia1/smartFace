@@ -72,7 +72,14 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" id="logout-form">
+                                    {% csrf_token %}
+                                    <a class="dropdown-item" href="#" onclick="document.getElementById('logout-form').submit(); return false;">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </a>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 </div>

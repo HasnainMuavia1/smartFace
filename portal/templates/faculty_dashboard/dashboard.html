@@ -3,15 +3,19 @@
 {% block title %}Faculty Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-primary text-white">
+            <div class="card bg-primary text-white shadow">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-user-circle fa-3x"></i>
+                            {% if faculty.profile_picture %}
+                                <img src="{{ faculty.profile_picture_url }}" class="rounded-circle" width="60" height="60" alt="Profile Picture">
+                            {% else %}
+                                <i class="fas fa-user-circle fa-3x"></i>
+                            {% endif %}
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h4 class="mb-1">Welcome, {{ faculty.user.get_full_name|default:faculty.user.username }}</h4>
@@ -26,7 +30,7 @@
     <!-- Assigned Courses -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">Your Assigned Courses</h5>
                 </div>
@@ -34,20 +38,30 @@
                     <div class="row g-4">
                         {% for course in assigned_courses %}
                         <div class="col-12 col-md-6 col-xl-4">
-                            <div class="card dashboard-card h-100">
+                            <div class="card dashboard-card h-100 shadow-sm hover-card">
                                 <div class="card-body">
-                                    <h5 class="card-title">{{ course.name }}</h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ course.code }}</h6>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="course-icon-container me-3">
+                                            <i class="fas fa-book-open course-icon"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="card-title mb-1">{{ course.name }}</h5>
+                                            <h6 class="card-subtitle text-muted">{{ course.code }}</h6>
+                                        </div>
+                                    </div>
                                     <p class="card-text">{{ course.description|truncatechars:100 }}</p>
-                                    <div class="d-flex gap-2">
-                                        <a href="{% url 'mark_attendance' course.id %}" class="btn btn-primary">
-                                            <i class="fas fa-clipboard-check"></i> Mark Attendance
+                                    <div class="d-flex flex-wrap gap-2 mt-3 justify-content-between">
+                                        <a href="{% url 'mark_attendance' course.id %}" class="btn btn-primary btn-sm action-button">
+                                            <i class="fas fa-clipboard-check action-icon"></i> Manual Attendance
                                         </a>
-                                        <a href="{% url 'faculty_view_attendance' course.id %}" class="btn btn-info">
-                                            <i class="fas fa-eye"></i> View Attendance
+                                        <a href="{% url 'face_recognition_attendance' course.id %}" class="btn btn-success btn-sm action-button">
+                                            <i class="fas fa-camera action-icon"></i> Face Recognition
                                         </a>
-                                        <a href="{% url 'faculty_generate_report' course.id %}" class="btn btn-success">
-                                            <i class="fas fa-file-alt"></i> Report
+                                        <a href="{% url 'faculty_view_attendance' course.id %}" class="btn btn-info btn-sm text-white action-button">
+                                            <i class="fas fa-eye action-icon"></i> View Attendance
+                                        </a>
+                                        <a href="{% url 'faculty_generate_report' course.id %}" class="btn btn-secondary btn-sm action-button">
+                                            <i class="fas fa-file-alt action-icon"></i> Report
                                         </a>
                                     </div>
                                 </div>
@@ -69,45 +83,57 @@
     <!-- Quick Links -->
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">Quick Links</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
-                        <div class="col-6 col-md-3">
-                            <div class="card dashboard-card text-center h-100">
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <div class="card dashboard-card text-center h-100 shadow-sm hover-card">
                                 <div class="card-body">
-                                    <i class="fas fa-calendar-alt fa-2x mb-2 text-primary"></i>
+                                    <div class="icon-circle mb-3">
+                                        <i class="fas fa-calendar-alt icon-lg text-primary"></i>
+                                    </div>
                                     <h5 class="card-title">Today's Schedule</h5>
-                                    <p class="card-text">View your classes for today</p>
+                                    <p class="card-text small">View your classes for today</p>
+                                    <a href="#" class="btn btn-outline-primary btn-sm mt-2">View</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card dashboard-card text-center h-100">
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <div class="card dashboard-card text-center h-100 shadow-sm hover-card">
                                 <div class="card-body">
-                                    <i class="fas fa-chart-bar fa-2x mb-2 text-success"></i>
+                                    <div class="icon-circle mb-3">
+                                        <i class="fas fa-chart-bar icon-lg text-success"></i>
+                                    </div>
                                     <h5 class="card-title">Analytics</h5>
-                                    <p class="card-text">View attendance statistics</p>
+                                    <p class="card-text small">View attendance statistics</p>
+                                    <a href="#" class="btn btn-outline-success btn-sm mt-2">View</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card dashboard-card text-center h-100">
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <div class="card dashboard-card text-center h-100 shadow-sm hover-card">
                                 <div class="card-body">
-                                    <i class="fas fa-bell fa-2x mb-2 text-warning"></i>
+                                    <div class="icon-circle mb-3">
+                                        <i class="fas fa-bell icon-lg text-warning"></i>
+                                    </div>
                                     <h5 class="card-title">Notifications</h5>
-                                    <p class="card-text">Check your alerts</p>
+                                    <p class="card-text small">Check your alerts</p>
+                                    <a href="#" class="btn btn-outline-warning btn-sm mt-2">View</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="card dashboard-card text-center h-100">
+                        <div class="col-6 col-sm-6 col-md-3">
+                            <div class="card dashboard-card text-center h-100 shadow-sm hover-card">
                                 <div class="card-body">
-                                    <i class="fas fa-cog fa-2x mb-2 text-info"></i>
+                                    <div class="icon-circle mb-3">
+                                        <i class="fas fa-cog icon-lg text-info"></i>
+                                    </div>
                                     <h5 class="card-title">Settings</h5>
-                                    <p class="card-text">Manage your preferences</p>
+                                    <p class="card-text small">Manage your preferences</p>
+                                    <a href="#" class="btn btn-outline-info btn-sm mt-2">View</a>
                                 </div>
                             </div>
                         </div>
@@ -121,4 +147,69 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .dashboard-card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .course-icon-container {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: rgba(13, 110, 253, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .course-icon {
+        font-size: 1.5rem;
+        color: #0d6efd;
+    }
+    .action-button {
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 110px;
+    }
+    .action-icon {
+        margin-right: 5px;
+    }
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: rgba(13, 110, 253, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .icon-lg {
+        font-size: 1.75rem;
+    }
+    @media (max-width: 767.98px) {
+        .d-flex.flex-wrap.gap-2 {
+            justify-content: center;
+        }
+        .card-title, .card-subtitle, .card-text {
+            text-align: center;
+        }
+        .course-icon-container {
+            margin: 0 auto 15px;
+        }
+        .d-flex.align-items-center.mb-3 {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
 {% endblock %}
