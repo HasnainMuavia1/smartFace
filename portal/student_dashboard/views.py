@@ -33,6 +33,14 @@ def view_attendance(request, course_id=None):
     if course_id:
         course = get_object_or_404(Course, id=course_id, students=student)
         attendance = Attendance.objects.filter(student=student, course=course)
+        
+        # Calculate attendance percentage
+        total_classes = attendance.count()
+        present_classes = attendance.filter(is_present=True).count()
+        course.attendance_percentage = round((present_classes / total_classes * 100) if total_classes > 0 else 0)
+        course.present_classes = present_classes
+        course.total_classes = total_classes
+        
         context = {
             'course': course,
             'attendance': attendance,

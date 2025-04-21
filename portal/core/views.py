@@ -8,30 +8,22 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        role = request.POST.get('role')
         
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
-            # Check if user is a superuser
+            login(request, user)
+            
+            # Automatically redirect based on user role
             if user.is_superuser:
-                if role == 'admin':  # Only allow superusers to login as admin
-                    login(request, user)
-                    return redirect('admin_dashboard')
-                else:
-                    messages.error(request, 'Superusers can only login as admin.')
+                return redirect('admin_dashboard')
+            elif user.role == Role.FACULTY:
+                return redirect('faculty_dashboard')
+            elif user.role == Role.STUDENT:
+                return redirect('student_dashboard')
             else:
-                # For regular users, check their role
-                if user.role == role:
-                    login(request, user)
-                    if role == Role.FACULTY:
-                        return redirect('faculty_dashboard')
-                    elif role == Role.STUDENT:
-                        return redirect('student_dashboard')
-                    else:
-                        messages.error(request, 'Invalid role for regular user.')
-                else:
-                    messages.error(request, 'Invalid role for this user.')
+                messages.error(request, 'Invalid user role.')
+                return redirect('login')
         else:
             messages.error(request, 'Invalid username or password.')
     
